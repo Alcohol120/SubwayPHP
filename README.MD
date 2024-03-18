@@ -24,7 +24,7 @@ SubwayPHP - php router
 
 #### Install
 
-    composer require subway-router
+    composer require alclab/subway-router
 
 ## Routes
 
