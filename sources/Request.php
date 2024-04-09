@@ -26,7 +26,7 @@ namespace Subway {
         private array $_params;
         private array $_headers;
         private array $_cookies;
-        private string | null $_body;
+        private ?string $_body;
         private array $_files;
 
         public function __get(string $name) {

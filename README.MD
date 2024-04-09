@@ -9,19 +9,19 @@ SubwayPHP - php router
     $map = new Map(); // create router
     $map->route('GET', '/', function ($request, $response, $route) {
         // home page
-        $response->sendText('home page');
+        return $response->body('home page');
     });
     $map->group('/news', function ($group) {
         $group->route('GET', '/', function ($request, $response, $route) {
             // news page
-            $response->sendText('news');
+            return $response->body('news');
         });
         $group->route('GET', '/{id:i}', function ($request, $response, $route) {
             $postId = (int)$request->segment(2);
             // article page
             if($postId < 1) {
-                $response->status(404)->sendText('Not found');
-            } else $response->sendText("Article: {$pageId}");
+                return $response->status(404)->body('Not found');
+            } else return $response->body("Article: {$pageId}");
         });
     });
     $map->build(); // routes built and ready to use
@@ -115,6 +115,7 @@ Optional segments has less priority than mandatory ones
     use Subway\Map;
     use Subway\Route;
     use Subway\Request;
+    use Subway\Response;
     use Subway\Middleware;
     
     class CustomMiddleware extends Middleware {
@@ -127,17 +128,16 @@ Optional segments has less priority than mandatory ones
         }
 
         // execute before route loaded
-        public function onResolving(callable $onLoad, Request $request, Route $route) : callable {
-            // this hook can by async or syncronous and should return or promise onLoad callback
-            return new Promise(resolve => {
-                // do something before load route
-                resolve(onLoad);
-            });
+        public function onResolving(callable $onLoad, Request $request, Response $response, Route $route) : callable {
+            // this should return function. You can return $onLoad callback to keep default behavior
+            return $onLoad;
         }
 
         // execute after route loaded
-        public function onResolved(Request $request, Route $route) : void {
+        public function onResolved(Request $request, Response $response, Route $route) : void {
             // this hook don't return anything
+            // you can still manipulate with $response
+            if($response->body !== 'ok') $response->status(404);
         }
 
     }
@@ -145,12 +145,12 @@ Optional segments has less priority than mandatory ones
     $map = new Map();
     
     $map->route('GET', '/foo/bar', function ($request, $response, $route) {
-        // load page
+        return $response->body('not ok');
     })->middleware(new CustomMiddleware());
     
     $map->group('/', function ($group) {
         $group->route('GET', '/foo/bar', function ($request, $response, $route) {
-            // load page
+            return $response->body('ok');
         });
     })->middleware(new CustomMiddleware());
 
@@ -161,7 +161,7 @@ Optional segments has less priority than mandatory ones
 
     class Logger extends Middleware {
         
-        public function onResolved($request, $route) {
+        public function onResolved($request, $response, $route) {
             print_r([ $request->path, $request->query, $route->name ]);
         }
         
@@ -169,7 +169,7 @@ Optional segments has less priority than mandatory ones
 
     class Auth extends Middleware {
         
-        public function onResolving($onLoad, $request) {
+        public function onResolving($onLoad, $request, $response) {
             // check if user logged in
             if(isset($_SESSION['userId'])) {
                 return $onLoad; // return default route loader
@@ -216,10 +216,12 @@ Optional segments has less priority than mandatory ones
     new Subway\Response()
         ->status : int // returns status code
         ->headers : array // returns headers array
+        ->body : ?string // returns body or null
+        ->json : ?array // returns content array or null
         ->status(int $statusCode) : $this // set status code
         ->header(string $name, string $value) : $this // set header
-        ->sendText(string $data) : void // send text/html content
-        ->sendJSON(array $data) : void // send json encoded from array
+        ->body(string $data) : $this // set body content
+        ->json(array $data) : $this // set body content as array
         ->redirect(string $url, int $statusCode=302) : void // redirects to given URL with given status code (default 302)
 
 #### Route

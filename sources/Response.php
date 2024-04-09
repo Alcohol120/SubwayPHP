@@ -5,16 +5,22 @@ namespace Subway {
     /**
      * @property int $status;
      * @property array $headers;
+     * @property ?string $body;
+     * @property ?array $json;
      */
 
     class Response {
 
         private int $_statusCode = 200;
         private array $_headers = [];
+        private ?string $_body = null;
+        private ?array $_json = null;
 
         public function __get(string $name) {
             if($name == 'status') return $this->_statusCode;
             if($name == 'headers') return $this->_headers;
+            if($name == 'body') return $this->_body;
+            if($name == 'json') return $this->_json;
             return null;
         }
 
@@ -28,27 +34,21 @@ namespace Subway {
             return $this;
         }
 
-        public function sendText(string $data) : void {
-            $this->sendHeaders();
-            echo $data;
+        public function body(string $body) : Response {
+            $this->_body = $body;
+            $this->_json = null;
+            return $this;
         }
 
-        public function sendJSON(array $data) : void {
-            $this->header('Content-Type', 'application/json');
-            $this->sendHeaders();
-            echo json_encode($data);
+        public function json(array $json) : Response {
+            $this->_body = null;
+            $this->_json = $json;
+            return $this;
         }
 
         public function redirect(string $url, int $statusCode=302) : void {
             $this->_statusCode = $statusCode;
-            header('Location', $url, $statusCode);
-        }
-
-        private function sendHeaders() : void {
-            http_response_code($this->_statusCode);
-            foreach($this->_headers as $key=>$val) {
-                header("{$key}:{$val}");
-            }
+            $this->header('Location', $url);
         }
 
     }

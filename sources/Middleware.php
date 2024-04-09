@@ -8,11 +8,11 @@ namespace Subway {
             return $rate;
         }
 
-        public function onResolving(callable $onLoad, Request $request, Route $route) : callable {
+        public function onResolving(callable $onLoad, Request $request, Response $response, Route $route) : callable {
             return $onLoad;
         }
 
-        public function onResolved(Request $request, Route $route) : void {}
+        public function onResolved(Request $request, Response $response, Route $route) : void {}
 
     }
 

@@ -119,15 +119,28 @@ namespace Subway {
         }
 
         public function resolve(Request $request) : void {
+            $response = new Response();
             $onLoad = $this->_onLoad;
             for($i = 0; $i < count($this->_middleware); $i++) {
                 if(!method_exists($this->_middleware[$i], 'onResolving')) continue;
-                $onLoad = $this->_middleware[$i]->onResolving($this->_onLoad, $request, $this);
+                $onLoad = $this->_middleware[$i]->onResolving($this->_onLoad, $request, $response, $this);
             }
-            $onLoad($request, new Response(), $this);
+            $result = $onLoad($request, $response, $this);
             for($i = 0; $i < count($this->_middleware); $i++) {
                 if(!method_exists($this->_middleware[$i], 'onResolved')) continue;
-                $this->_middleware[$i]->onResolved($request, $this);
+                $this->_middleware[$i]->onResolved($request, $result instanceof Response ? $result : $response, $this);
+            }
+            if($result instanceof Response) {
+                if($result->json) $result->header('Content-Type', 'application/json');
+                http_response_code($result->status);
+                foreach($result->headers as $key=>$val) {
+                    header("{$key}:{$val}");
+                }
+                if($result->body) {
+                    echo $result->body;
+                } elseif($result->json) {
+                    echo json_encode($result->json);
+                } else echo '';
             }
         }
 
