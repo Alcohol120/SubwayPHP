@@ -7,20 +7,25 @@ SubwayPHP - php router
     use Subway\Map;
     
     $map = new Map(); // create router
-    $map->route('GET', '/', function ($request, $route) {
+    $map->route('GET', '/', function ($request, $response, $route) {
         // home page
+        $response->sendText('home page');
     });
     $map->group('/news', function ($group) {
-        $group->route('GET', '/', function ($request, $route) {
+        $group->route('GET', '/', function ($request, $response, $route) {
             // news page
+            $response->sendText('news');
         });
-        $group->route('GET', '/{id:i}', function ($request, $route) {
+        $group->route('GET', '/{id:i}', function ($request, $response, $route) {
             $postId = (int)$request->segment(2);
             // article page
+            if($postId < 1) {
+                $response->status(404)->sendText('Not found');
+            } else $response->sendText("Article: {$pageId}");
         });
     });
     $map->build(); // routes built and ready to use
-    $map->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], getallheaders()); // route
+    $map->dispatch(); // route
 
 #### Install
 
@@ -68,7 +73,20 @@ You should re-build your router with any changes in your routes setup
 
 #### Dispatch
 
-    $map->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], getallheaders());
+    // using current request data from $_SERVER, $_POST, $_COOKIES etc...
+    $map->dispatch();
+
+    // using custom Request instance
+    $req = new Request(
+        $_SERVER['REQUEST_METHOD'],
+        $_SERVER['REQUEST_URI'],
+        $_POST,
+        getallheaders(),
+        $_COOKIE,
+        @file_get_contents('php://input'),
+        $_FILES,
+    );
+    $map->displatch($req);
 
 ## Routes estimation and priorities
 Static segments has the highest priority.\
@@ -79,15 +97,15 @@ Variable (any) segments has the lowest priority.
     $map->route('GET', '/foo/{bar:i}')->name('integer')
     $map->route('GET', '/foo/bar')->name('static')
     
-    $map->dispatch('GET', '/foo/bar') // route named 'static' will be loaded
-    $map->dispatch('GET', '/foo/foo') // route named 'any' will be loaded
+    $map->dispatch(new Request('GET', '/foo/bar')) // route named 'static' will be loaded
+    $map->dispatch(new Request('GET', '/foo/foo')) // route named 'any' will be loaded
 
 Optional segments has less priority than mandatory ones
 
     $map->route('GET', '/foo?/bar')->name('first')
     $map->route('GET', '/foo/bar')->name('second')
     
-    $map->dispatch('GET', '/foo/bar') // route named 'second' will be loaded
+    $map->dispatch(new Request('GET', '/foo/bar')) // route named 'second' will be loaded
     // Technically both routes are fits such request,
     // but 'first' route will get less estimation due to an optional segment.
     // In this example 'first' route will never be loaded
@@ -126,18 +144,18 @@ Optional segments has less priority than mandatory ones
 
     $map = new Map();
     
-    $map->route('GET', '/foo/bar', function ($request, $route) {
+    $map->route('GET', '/foo/bar', function ($request, $response, $route) {
         // load page
     })->middleware(new CustomMiddleware());
     
     $map->group('/', function ($group) {
-        $group->route('GET', '/foo/bar', function ($request, $route) {
+        $group->route('GET', '/foo/bar', function ($request, $response, $route) {
             // load page
         });
     })->middleware(new CustomMiddleware());
 
     $map->build();
-    $map->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], getallheaders());
+    $map->dispatch();
 
 #### Multiple middleware
 
@@ -172,19 +190,37 @@ Optional segments has less priority than mandatory ones
 
 #### Request
 
-    new Subway\Request('GET', https://example.com/foo/bar?foo=1&bar=2#foo', [ 'Content-Type' => 'application/json' ])
-        ->method : string // GET
-        ->url : string // 'https://example.com/foo/bar?foo=1&bar=2#foo'
-        ->origin : string // 'https://example.com'
-        ->path : string // 'foo/bar'
-        ->query : string // 'foo=1&bar=2'
-        ->anchor : string // '#foo'
-        ->segments : array // [ 'foo', 'bar' ]
-        ->segment(int $segmentNumber) : string // get segment by number (starts from 1). Example: $request->segment(2) => 'bar'
-        ->keys : array // [ 'foo' => '1', 'bar' => '2' ]
-        ->key(string $keyName) : string // get GET property by name. Example: $request->key('bar') => '2'
-        ->headers : array // get HTTP headers array
-        ->header(string $headerName) : string // get HTTP headers by name
+    new Subway\Request(string $method, string $url, array $post=[], array $headers=[], array $cookies=[], string | null $body=null, array $files=[])
+        ->method : string // returns HTTP method
+        ->url : string // returns full request URL
+        ->origin : string // returns request origin (https://example.com)
+        ->path : string // returns URI path (foo/bar)
+        ->query : string // returns query string (foo=1&bar=2)
+        ->params : array // returns POST params ([ 'foo' => 1, 'bar' => 2 ])
+        ->segments : array // returns URI segments array ([ 'foo', 'bar' ])
+        ->segment(int $segmentNumber) : string // returns segment by number (starts from 1)
+        ->keys : array // return GET params ([ 'foo' => '1', 'bar' => '2' ])
+        ->key(string $keyName) : string // returns GET property by name
+        ->headers : array // returns HTTP headers array
+        ->header(string $headerName) : string // returns HTTP headers by name
+        ->cookies : array // returns cookies array
+        ->cookie(string $cookieName) : string // returns cookie by cookie name
+        ->body : string // returns request body string
+        ->json() : array // returns array of decoded request body
+        ->files : array // returns $_FILES array
+        // static methods
+        ::getCurrent() : Request // returns Request instance witch represents current request
+
+#### Response
+
+    new Subway\Response()
+        ->status : int // returns status code
+        ->headers : array // returns headers array
+        ->status(int $statusCode) : $this // set status code
+        ->header(string $name, string $value) : $this // set header
+        ->sendText(string $data) : void // send text/html content
+        ->sendJSON(array $data) : void // send json encoded from array
+        ->redirect(string $url, int $statusCode=302) : void // redirects to given URL with given status code (default 302)
 
 #### Route
 
