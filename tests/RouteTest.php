@@ -10,12 +10,12 @@ final class RouteTest extends TestCase {
 
     public function test_inGroup() : void {
         // return true
-        $route = new Route('', [ 'foo', 'bar' ], [], [], function () {});
+        $route = new Route('get', '', [ 'foo', 'bar' ], [], [], function () {});
         $this->assertSame(true, $route->inGroup('foo'));
         $this->assertSame(true, $route->inGroup('bar'));
         $this->assertSame(true, $route->inGroup('foo', 'bar'));
         // Return false
-        $route = new Route('', [], [], [], function () {});
+        $route = new Route('get', '', [], [], [], function () {});
         $this->assertSame(false, $route->inGroup('foo'));
         $this->assertSame(false, $route->inGroup('bar'));
         $this->assertSame(false, $route->inGroup('foo', 'bar'));
@@ -23,41 +23,44 @@ final class RouteTest extends TestCase {
 
     public function test_estimate() : void {
         // Return -1 if no matches pattern
-        $this->assertSame(-1, RouteTest::getRoute('foo/bar')->estimate(new Request('bar')));
-        $this->assertSame(-1, RouteTest::getRoute('foo/bar?/second')->estimate(new Request('foo')));
+        $this->assertSame(-1, RouteTest::getRoute('foo/bar')->estimate(new Request('get', 'bar')));
+        $this->assertSame(-1, RouteTest::getRoute('foo/bar?/second')->estimate(new Request('get', 'foo')));
+        // Return -1 if different method
+        $this->assertSame(-1, RouteTest::getRoute('foo/bar', 'put')->estimate(new Request('get', 'bar')));
+        $this->assertSame(-1, RouteTest::getRoute('foo/bar?/second')->estimate(new Request('post', 'foo')));
         // Return 0 for index route
-        $this->assertSame(0, RouteTest::getRoute('')->estimate(new Request('')));
-        $this->assertSame(0, RouteTest::getRoute('')->estimate(new Request('foo')));
+        $this->assertSame(0, RouteTest::getRoute('')->estimate(new Request('get', '')));
+        $this->assertSame(0, RouteTest::getRoute('')->estimate(new Request('get', 'foo')));
         // Return rate with simple segments
-        $this->assertSame(6, RouteTest::getRoute('foo/bar')->estimate(new Request('foo/bar')));
-        $this->assertSame(5, RouteTest::getRoute('foo/{any:i}')->estimate(new Request('foo/1')));
-        $this->assertSame(5, RouteTest::getRoute('foo/{any:a}')->estimate(new Request('foo/s-s')));
-        $this->assertSame(5, RouteTest::getRoute('foo/{any:[a-z0-9]{4}}')->estimate(new Request('foo/bb22')));
-        $this->assertSame(4, RouteTest::getRoute('foo/{any}')->estimate(new Request('foo/bar')));
+        $this->assertSame(6, RouteTest::getRoute('foo/bar')->estimate(new Request('get', 'foo/bar')));
+        $this->assertSame(5, RouteTest::getRoute('foo/{any:i}')->estimate(new Request('get', 'foo/1')));
+        $this->assertSame(5, RouteTest::getRoute('foo/{any:a}')->estimate(new Request('get', 'foo/s-s')));
+        $this->assertSame(5, RouteTest::getRoute('foo/{any:[a-z0-9]{4}}')->estimate(new Request('get', 'foo/bb22')));
+        $this->assertSame(4, RouteTest::getRoute('foo/{any}')->estimate(new Request('get', 'foo/bar')));
 
-        $this->assertSame(3, RouteTest::getRoute('foo/bar?')->estimate(new Request('foo')));
-        $this->assertSame(3, RouteTest::getRoute('foo/{any:i}?')->estimate(new Request('foo')));
-        $this->assertSame(3, RouteTest::getRoute('foo/{any:a}?')->estimate(new Request('foo')));
-        $this->assertSame(3, RouteTest::getRoute('foo/{any:[a-z0-9]{4}}?')->estimate(new Request('foo')));
-        $this->assertSame(3, RouteTest::getRoute('foo/{any}?')->estimate(new Request('foo')));
+        $this->assertSame(3, RouteTest::getRoute('foo/bar?')->estimate(new Request('get', 'foo')));
+        $this->assertSame(3, RouteTest::getRoute('foo/{any:i}?')->estimate(new Request('get', 'foo')));
+        $this->assertSame(3, RouteTest::getRoute('foo/{any:a}?')->estimate(new Request('get', 'foo')));
+        $this->assertSame(3, RouteTest::getRoute('foo/{any:[a-z0-9]{4}}?')->estimate(new Request('get', 'foo')));
+        $this->assertSame(3, RouteTest::getRoute('foo/{any}?')->estimate(new Request('get', 'foo')));
 
-        $this->assertSame(3, RouteTest::getRoute('foo/bar?')->estimate(new Request('foo/n')));
-        $this->assertSame(3, RouteTest::getRoute('foo/{any:i}?')->estimate(new Request('foo/n')));
-        $this->assertSame(3, RouteTest::getRoute('foo/{any:a}?')->estimate(new Request('foo/1')));
-        $this->assertSame(3, RouteTest::getRoute('foo/{any:[a-z0-9]{4}}?')->estimate(new Request('foo/n')));
+        $this->assertSame(3, RouteTest::getRoute('foo/bar?')->estimate(new Request('get', 'foo/n')));
+        $this->assertSame(3, RouteTest::getRoute('foo/{any:i}?')->estimate(new Request('get', 'foo/n')));
+        $this->assertSame(3, RouteTest::getRoute('foo/{any:a}?')->estimate(new Request('get', 'foo/1')));
+        $this->assertSame(3, RouteTest::getRoute('foo/{any:[a-z0-9]{4}}?')->estimate(new Request('get', 'foo/n')));
         // Return rate with complicated optional segments
-        $this->assertSame(6, RouteTest::getRoute('first/second?/third')->estimate(new Request('first/third')));
-        $this->assertSame(9, RouteTest::getRoute('first/second?/third')->estimate(new Request('first/second/third')));
+        $this->assertSame(6, RouteTest::getRoute('first/second?/third')->estimate(new Request('get', 'first/third')));
+        $this->assertSame(9, RouteTest::getRoute('first/second?/third')->estimate(new Request('get', 'first/second/third')));
 
-        $this->assertSame(6, RouteTest::getRoute('first/{any}?/second')->estimate(new Request('first/second')));
-        $this->assertSame(6, RouteTest::getRoute('first/{any}?/{any}?/second')->estimate(new Request('first/second')));
-        $this->assertSame(7, RouteTest::getRoute('first/{any}?/{any}?/{any}?/second')->estimate(new Request('first/test/second')));
+        $this->assertSame(6, RouteTest::getRoute('first/{any}?/second')->estimate(new Request('get', 'first/second')));
+        $this->assertSame(6, RouteTest::getRoute('first/{any}?/{any}?/second')->estimate(new Request('get', 'first/second')));
+        $this->assertSame(7, RouteTest::getRoute('first/{any}?/{any}?/{any}?/second')->estimate(new Request('get', 'first/test/second')));
 
-        $this->assertSame(7, RouteTest::getRoute('{any}?/{v1:i}?/second/third?/{v2:[a-z]+}')->estimate(new Request('1/second/third')));
+        $this->assertSame(7, RouteTest::getRoute('{any}?/{v1:i}?/second/third?/{v2:[a-z]+}')->estimate(new Request('get', '1/second/third')));
 
-        $this->assertSame(4, RouteTest::getRoute('first/{any}?/{any}?/end?')->estimate(new Request('first/second')));
+        $this->assertSame(4, RouteTest::getRoute('first/{any}?/{any}?/end?')->estimate(new Request('get', 'first/second')));
 
-        $this->assertSame(5, RouteTest::getRoute('{any1}?/{any2}?/{int:i}?/{any3}?/end')->estimate(new Request('1/end')));
+        $this->assertSame(5, RouteTest::getRoute('{any1}?/{any2}?/{int:i}?/{any3}?/end')->estimate(new Request('get', '1/end')));
     }
 
     public function test_getUrl() : void {
@@ -75,11 +78,11 @@ final class RouteTest extends TestCase {
         $this->assertSame(null, RouteTest::getRoute('foo/{bar:[a-z]+}')->getUrl([ 'bar' => '1' ]));
     }
 
-    private static function getRoute(string $path) : Route {
+    private static function getRoute(string $path, string $method='get') : Route {
         $segments = [];
         $paths = explode('/', $path);
         for($i = 0; $i < count($paths); $i++) if($paths[$i]) $segments[] = new Segment($paths[$i]);
-        return new Route('', [], $segments, [], function () {});
+        return new Route($method, '', [], $segments, [], function () {});
     }
 
 }

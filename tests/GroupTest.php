@@ -42,12 +42,12 @@ final class GroupTest extends TestCase {
     public function test_route() : void {
         // Add endpoint member
         $group = new MyGroup1('', null);
-        $group->route('', function () {});
+        $group->route('get', '', function () {});
         $this->assertSame(1, count($group->_members));
         $this->assertInstanceOf(Endpoint::class, $group->_members[0]);
         // Return added endpoint
         $group = new MyGroup1('', null);
-        $child = $group->route('', function () {});
+        $child = $group->route('get', '', function () {});
         $this->assertInstanceOf(Endpoint::class, $child);
     }
 
@@ -55,9 +55,9 @@ final class GroupTest extends TestCase {
         // Return routes
         $group = new MyGroup1('first', null);
         $group->group('second', function ($g) {
-            $g->route('end', function () {});
+            $g->route('get', 'end', function () {});
         });
-        $group->route('end', function () {});
+        $group->route('get', 'end', function () {});
         $routes = $group->getRoutes();
         $this->assertSame(2, count($routes));
         $this->assertInstanceOf(Route::class, $routes[0]);

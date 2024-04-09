@@ -3,3 +3,4 @@ vendor
 .phpunit.result.cache
 phpunit.xml
 test.php
+composer.lock

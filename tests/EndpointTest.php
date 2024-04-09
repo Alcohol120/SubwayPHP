@@ -14,8 +14,8 @@ class MyEndpoint1 extends Endpoint {
     public array $_segments = [];
     public array $_middleware = [];
 
-    public function __construct(string $path) {
-        parent::__construct($path, function () {});
+    public function __construct(string $method, string $path) {
+        parent::__construct($method, $path, function () {});
     }
 
 }
@@ -26,7 +26,7 @@ final class EndpointTest extends TestCase {
 
     public function test_getRoute() : void {
         // Return route
-        $endpoint = new Endpoint('', function () {});
+        $endpoint = new Endpoint('get', '', function () {});
         $this->assertInstanceOf(Route::class, $endpoint->getRoute());
     }
 
@@ -34,7 +34,7 @@ final class EndpointTest extends TestCase {
         $method = new ReflectionMethod(MyEndpoint1::class, 'joinProps');
         $method->setAccessible(true);
         // Return properties of itself
-        $endpoint = new MyEndpoint1('');
+        $endpoint = new MyEndpoint1('get', '');
         $segment = new Segment('foo');
         $middleware = new MyMiddleware1();
         $endpoint->_name = 'foo';
@@ -46,7 +46,7 @@ final class EndpointTest extends TestCase {
         $this->assertSame([ $segment ], $props['segments']);
         $this->assertSame([ $middleware ], $props['middleware']);
         // Return merged properties
-        $endpoint = new MyEndpoint1('');
+        $endpoint = new MyEndpoint1('get', '');
         $segment1 = new Segment('foo');
         $segment2 = new Segment('bar');
         $middleware1 = new MyMiddleware1();

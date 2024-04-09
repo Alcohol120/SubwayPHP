@@ -3,12 +3,14 @@
 namespace Subway {
 
     /**
+     * @property string $method;
      * @property string $name;
      * @property array $groups;
      */
 
     class Route {
 
+        private string $_method = '';
         private string $_name = '';
         private array $_groups = [];
         private array $_segments = [];
@@ -16,12 +18,14 @@ namespace Subway {
         private $_onLoad;
 
         public function __get(string $name) {
+            if($name == 'method') return $this->_method;
             if($name == 'name') return $this->_name;
             if($name == 'groups') return $this->_groups;
             return null;
         }
 
-        public function __construct(string $name, array $groups, array $segments, array $middleware, callable $onLoad) {
+        public function __construct(string $method, string $name, array $groups, array $segments, array $middleware, callable $onLoad) {
+            $this->_method = strtoupper($method);
             $this->_name = $name;
             $this->_groups = $groups;
             $this->_segments = $segments;
@@ -35,6 +39,7 @@ namespace Subway {
         }
 
         public function estimate(Request $request) : int {
+            if($request->method != $this->_method) return -1;
             $paths = $request->segments;
             $rates = array_fill(0, count($this->_segments), 0);
             $pathIndex = 0;

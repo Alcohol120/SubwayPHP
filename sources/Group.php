@@ -17,8 +17,8 @@ namespace Subway {
             return $group;
         }
 
-        public function route(string $path, callable $onLoad) : Endpoint {
-            $endpoint = new Endpoint($path, $onLoad);
+        public function route(string $method, string $path, callable $onLoad) : Endpoint {
+            $endpoint = new Endpoint($method, $path, $onLoad);
             $this->_members[] = $endpoint;
             return $endpoint;
         }

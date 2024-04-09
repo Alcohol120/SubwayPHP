@@ -20,8 +20,8 @@ namespace Subway {
             $this->_onFailed = $onFailed;
         }
 
-        public function dispatch(string $url) : void {
-            $request = new Request($url);
+        public function dispatch(string $method, string $url, array $headers=[]) : void {
+            $request = new Request($method, $url, $headers);
             $bestRate = -1;
             $bestRoute = null;
             for($i = 0; $i < count($this->_routes); $i++) {

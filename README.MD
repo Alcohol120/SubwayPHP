@@ -7,20 +7,20 @@ SubwayPHP - php router
     use Subway\Map;
     
     $map = new Map(); // create router
-    $map->route('/', function ($request, $route) {
+    $map->route('GET', '/', function ($request, $route) {
         // home page
     });
     $map->group('/news', function ($group) {
-        $group->route('/', function ($request, $route) {
+        $group->route('GET', '/', function ($request, $route) {
             // news page
         });
-        $group->route('/{id:i}', function ($request, $route) {
+        $group->route('GET', '/{id:i}', function ($request, $route) {
             $postId = (int)$request->segment(2);
             // article page
         });
     });
     $map->build(); // routes built and ready to use
-    $map->dispatch($_SERVER['REQUEST_URI']); // route
+    $map->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], getallheaders()); // route
 
 #### Install
 
@@ -36,24 +36,24 @@ SubwayPHP - php router
 
 #### Static path
 
-    $map->route('/foo/bar', function($request, $route) {});
+    $map->route('GET', '/foo/bar', function($request, $route) {});
 
 #### Variables in url
 
-    $map->route('/foo/{bar}') // {bar} - any string
-    $map->route('/foo/{bar:i}') // {bar:i} - integers only
-    $map->route('/foo/{bar:a}') // {bar:a} - allowed alpha (a-zA-Z), underscores and dashes
-    $map->route('/foo/{bar:[a-z]{2}\d+}') - pattern matching (case insensitive)
+    $map->route('GET', '/foo/{bar}') // {bar} - any string
+    $map->route('GET', '/foo/{bar:i}') // {bar:i} - integers only
+    $map->route('GET', '/foo/{bar:a}') // {bar:a} - allowed alpha (a-zA-Z), underscores and dashes
+    $map->route('GET', '/foo/{bar:[a-z]{2}\d+}') - pattern matching (case insensitive)
 
 #### Optional segments
 
-    $map->route('/foo?/{bar}') // first segment is optional
+    $map->route('GET', '/foo?/{bar}') // first segment is optional
 
 #### Groups
 
     $map->group('/foo', function ($group) {
-        $group->route('/', function ($req) {}); // GET /foo
-        $group->route('/bar', function ($req) {}); // GET /foo/bar
+        $group->route('GET', '/', function ($req) {}); // GET /foo
+        $group->route('GET', '/bar', function ($req) {}); // GET /foo/bar
     });
 
 ## Preparing and dispatching routes
@@ -68,26 +68,26 @@ You should re-build your router with any changes in your routes setup
 
 #### Dispatch
 
-    $map->dispatch($_SERVER['REQUEST_URI']);
+    $map->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], getallheaders());
 
 ## Routes estimation and priorities
 Static segments has the highest priority.\
 Pattern segments has the medium priority.\
 Variable (any) segments has the lowest priority.
 
-    $map->route('/foo/{bar}')->name('any')
-    $map->route('/foo/{bar:i}')->name('integer')
-    $map->route('/foo/bar')->name('static')
+    $map->route('GET', '/foo/{bar}')->name('any')
+    $map->route('GET', '/foo/{bar:i}')->name('integer')
+    $map->route('GET', '/foo/bar')->name('static')
     
-    $map->dispatch('/foo/bar') // route named 'static' will be loaded
-    $map->dispatch('/foo/foo') // route named 'any' will be loaded
+    $map->dispatch('GET', '/foo/bar') // route named 'static' will be loaded
+    $map->dispatch('GET', '/foo/foo') // route named 'any' will be loaded
 
 Optional segments has less priority than mandatory ones
 
-    $map->route('/foo?/bar')->name('first')
-    $map->route('/foo/bar')->name('second')
+    $map->route('GET', '/foo?/bar')->name('first')
+    $map->route('GET', '/foo/bar')->name('second')
     
-    $map->dispatch('/foo/bar') // route named 'second' will be loaded
+    $map->dispatch('GET', '/foo/bar') // route named 'second' will be loaded
     // Technically both routes are fits such request,
     // but 'first' route will get less estimation due to an optional segment.
     // In this example 'first' route will never be loaded
@@ -126,18 +126,18 @@ Optional segments has less priority than mandatory ones
 
     $map = new Map();
     
-    $map->route('/foo/bar', function ($request, $route) {
+    $map->route('GET', '/foo/bar', function ($request, $route) {
         // load page
     })->middleware(new CustomMiddleware());
     
     $map->group('/', function ($group) {
-        $group->route('/foo/bar', function ($request, $route) {
+        $group->route('GET', '/foo/bar', function ($request, $route) {
             // load page
         });
     })->middleware(new CustomMiddleware());
 
     $map->build();
-    $map->dispatch($_SERVER['REQUEST_URI']);
+    $map->dispatch($_SERVER['REQUEST_METHOD'], $_SERVER['REQUEST_URI'], getallheaders());
 
 #### Multiple middleware
 
@@ -172,7 +172,8 @@ Optional segments has less priority than mandatory ones
 
 #### Request
 
-    new Subway\Request('https://example.com/foo/bar?foo=1&bar=2#foo')
+    new Subway\Request('GET', https://example.com/foo/bar?foo=1&bar=2#foo', [ 'Content-Type' => 'application/json' ])
+        ->method : string // GET
         ->url : string // 'https://example.com/foo/bar?foo=1&bar=2#foo'
         ->origin : string // 'https://example.com'
         ->path : string // 'foo/bar'
@@ -182,10 +183,13 @@ Optional segments has less priority than mandatory ones
         ->segment(int $segmentNumber) : string // get segment by number (starts from 1). Example: $request->segment(2) => 'bar'
         ->keys : array // [ 'foo' => '1', 'bar' => '2' ]
         ->key(string $keyName) : string // get GET property by name. Example: $request->key('bar') => '2'
+        ->headers : array // get HTTP headers array
+        ->header(string $headerName) : string // get HTTP headers by name
 
 #### Route
 
     Subway\Route
+        ->method : string // http method
         ->name : string // name of route or empty string if not defined
         ->groups : array // array with names of groups which contain this route 
         ->inGroup(string $name) : bool // check if this route in group with specific name

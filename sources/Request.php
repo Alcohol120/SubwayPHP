@@ -3,6 +3,7 @@
 namespace Subway {
 
     /**
+     * @property string $method;
      * @property string $origin;
      * @property string $url;
      * @property string $path;
@@ -10,16 +11,20 @@ namespace Subway {
      * @property string $query;
      * @property array $keys;
      * @property string $anchor;
+     * @property array $headers;
      */
 
     class Request {
 
+        private string $_method;
         private string $_origin;
         private array $_segments;
         private array $_keys;
         private string $_anchor;
+        private array $_headers;
 
         public function __get(string $name) {
+            if($name == 'method') return $this->_method;
             if($name == 'origin') return $this->_origin;
             if($name == 'url') return $this->getUrl();
             if($name == 'path') return $this->getPath();
@@ -27,16 +32,19 @@ namespace Subway {
             if($name == 'query') return $this->getQuery();
             if($name == 'keys') return $this->_keys;
             if($name == 'anchor') return $this->_anchor;
+            if($name == 'headers') return $this->_headers;
             return null;
         }
 
-        public function __construct(string $url) {
+        public function __construct(string $method, string $url, array $headers=[]) {
+            $this->_method = strtoupper($method);
             preg_match("/^(https?:\/{2}(.*?)(\/|$))?(.*?)(\?.*?)?(#.*?)?$/", $url, $parts);
             $parts = $parts ?? [];
             $this->_origin = isset($parts[1]) && $parts[1] ? mb_substr($parts[1], 0, mb_strlen($parts[1]) - 1) : '';
             $this->_segments = Request::parsePath($parts[4] ?? '');
             $this->_keys = Request::parseQuery($parts[5] ?? '');
             $this->_anchor = $parts[6] ?? '';
+            $this->_headers = $headers;
         }
 
         public function segment(int $num) : string {
@@ -46,6 +54,10 @@ namespace Subway {
 
         public function key(string $name) : string {
             return $this->_keys[$name] ?? '';
+        }
+
+        public function header(string $name) : string {
+            return $this->_headers[$name] ?? '';
         }
 
         private function getUrl() : string {
