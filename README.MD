@@ -197,6 +197,7 @@ Optional segments has less priority than mandatory ones
         ->path : string // returns URI path (foo/bar)
         ->query : string // returns query string (foo=1&bar=2)
         ->params : array // returns POST params ([ 'foo' => 1, 'bar' => 2 ])
+        ->param(string $paramName) : string // returns POST param by name
         ->segments : array // returns URI segments array ([ 'foo', 'bar' ])
         ->segment(int $segmentNumber) : string // returns segment by number (starts from 1)
         ->keys : array // return GET params ([ 'foo' => '1', 'bar' => '2' ])
@@ -206,7 +207,7 @@ Optional segments has less priority than mandatory ones
         ->cookies : array // returns cookies array
         ->cookie(string $cookieName) : string // returns cookie by cookie name
         ->body : string // returns request body string
-        ->json() : array // returns array of decoded request body
+        ->json(assoc=true) : array // returns array of decoded request body
         ->files : array // returns $_FILES array
         // static methods
         ::getCurrent() : Request // returns Request instance witch represents current request

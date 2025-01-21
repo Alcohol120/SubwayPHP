@@ -80,8 +80,8 @@ namespace Subway {
             return $this->_cookies[$name] ?? '';
         }
 
-        public function json() : array {
-            return $this->_body ? @json_decode($this->_body, true) : [];
+        public function json(bool $assoc=true) : array {
+            return $this->_body ? @json_decode($this->_body, $assoc) : [];
         }
 
         private function getUrl() : string {

@@ -123,7 +123,7 @@ namespace Subway {
             $onLoad = $this->_onLoad;
             for($i = 0; $i < count($this->_middleware); $i++) {
                 if(!method_exists($this->_middleware[$i], 'onResolving')) continue;
-                $onLoad = $this->_middleware[$i]->onResolving($this->_onLoad, $request, $response, $this);
+                $onLoad = $this->_middleware[$i]->onResolving($onLoad, $request, $response, $this);
             }
             $result = $onLoad($request, $response, $this);
             for($i = 0; $i < count($this->_middleware); $i++) {
