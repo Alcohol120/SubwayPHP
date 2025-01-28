@@ -14,7 +14,7 @@ namespace Subway {
      * @property array $headers;
      * @property array $cookies;
      * @property string $body;
-     * @property string $files;
+     * @property array $files;
      */
 
     class Request {

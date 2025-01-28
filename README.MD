@@ -232,6 +232,6 @@ Optional segments has less priority than mandatory ones
         ->name : string // name of route or empty string if not defined
         ->groups : array // array with names of groups which contain this route 
         ->inGroup(string $name) : bool // check if this route in group with specific name
-        ->estimate(Subway\Request $request) : int // estimate route (onResolving() middleware hooks will be executed if exists)
+        ->estimate(Subway\Request $request) : int // estimate route (onEstimated() middleware hooks will be executed if exists)
         ->getUrl(array $props) : string // get URL of this route. Keys from 'props' parameter will be used to replace variable segments. Example: $map->route('/foo/{bar}')->getUrl([ 'bar' => 'something' ]) will return '/foo/something'
         ->resolve(Subway\Request $request) // load route (onResolving() and onResolved() middleware hooks will be executed if exists)
